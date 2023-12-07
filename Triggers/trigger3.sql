@@ -7,7 +7,7 @@ go
 
 create or alter trigger card_event
 ON events
-after INSERT
+instead of INSERT
 AS 
 BEGIN
 
