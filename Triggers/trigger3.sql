@@ -7,31 +7,17 @@ go
 
 create or alter trigger card_event
 ON events
-instead of INSERT
+after INSERT
 AS 
 BEGIN
 
-    if exists (SELECT * from inserted i where i.EVENTTYPE = 'Card' and i.CARDTYPE = 'Yellow')
-
-    -- How do I check if the player has a yellow card already?
-    -- Maybe?? How do I make this fit in the code??
-
-    -- select COUNT(CARDTYPE) as 'yellow card'
-    -- from EVENTS
-    -- where CARDTYPE = 'Yellow' and events.IDSUMMONEDMAINPLAYER = 9
-    -- group by IDSUMMONEDMAINPLAYER
-    
-
-    BEGIN
             insert into EVENTS (IDSUMMONEDMAINPLAYER,IDSUMMONEDPLAYEROUT,MINUTE,MATCHPART,EVENTTYPE,CARDTYPE)
-            SELECT i.IDSUMMONEDMAINPLAYER, i.IDSUMMONEDPLAYEROUT, i.MINUTE, i.MATCHPART, 'Card', 'Red'
+            SELECT distinct i.IDSUMMONEDMAINPLAYER, i.IDSUMMONEDPLAYEROUT, i.MINUTE, i.MATCHPART, 'Card', 'Red'
             from inserted i join events e on i.IDSUMMONEDMAINPLAYER = e.IDSUMMONEDMAINPLAYER
-            WHERE exists (select COUNT(e.CARDTYPE)
+            WHERE 2 = (select COUNT(e.CARDTYPE)
                             from EVENTS e 
-                            where e.CARDTYPE = 'Yellow'
+                            where e.CARDTYPE = 'Yellow' and i.IDSUMMONEDMAINPLAYER = e.IDSUMMONEDMAINPLAYER
                             group by e.IDSUMMONEDMAINPLAYER)
-
-    end;
 
 end;
 GO
