@@ -1,7 +1,76 @@
 use mundial
 go
 
-CREATE OR ALTER FUNCTION onfieldcheck(@IDSummoned numeric)
+create or alter trigger no_country_entry
+on SUMMONEDS
+instead OF INSERT
+AS
+BEGIN
+
+    INSERT INTO SUMMONEDS (IDPLAYER,IDMATCH,STARTING11)
+    SELECT i.IDPLAYER, i.IDMATCH, i.STARTING11
+    FROM inserted i INNER JOIN PLAYER p on i.IDPLAYER = p.IDPERSON
+                    INNER JOIN MATCH m on m.IDMATCH = i.IDMATCH                    
+    WHERE p.IDCOUNTRY IN (m.IDHOMETEAM,m.IDAWAYTEAM) and m.IDMATCH = i.IDMATCH
+
+    if @@ROWCOUNT < (select count(*) from inserted)
+        print('There were records not being inserted because the player does not belong to any of the countries playing on the match.')
+
+end;
+go
+
+
+CREATE OR ALTER TRIGGER referee_match_insert
+ON Match
+INSTEAD OF INSERT
+AS 
+BEGIN
+
+	Insert into match (IDAWAYTEAM,IDTOURNAMENTPHASE,IDSTADIUM,IDHOMETEAM,IDREFEREE,STARTDATETIME,ADDEDTIME1STHALF,ADDEDTIME2NDHALF,EXTRATIMEADDEDTIME1STHALF,EXTRATIMEADDEDTIME2NDHALF,EXTRATIME,PENALTIES)
+	select IDAWAYTEAM,IDTOURNAMENTPHASE,IDSTADIUM,IDHOMETEAM,IDREFEREE,STARTDATETIME,ADDEDTIME1STHALF,ADDEDTIME2NDHALF,EXTRATIMEADDEDTIME1STHALF,EXTRATIMEADDEDTIME2NDHALF,EXTRATIME,PENALTIES
+	from inserted i join REFEREE r on i.IDREFEREE = r.IDPERSON
+	WHERE r.IDCOUNTRY != i.IDAWAYTEAM and r.IDCOUNTRY != i.IDHOMETEAM 
+
+	if @@ROWCOUNT < (select count(*) from inserted)
+        print('There were records not being inserted because the referee belongs to one of the countries playing on the match.')
+
+end;
+GO
+
+create or alter trigger referee_match_update
+on MATCH
+instead of UPDATE
+as
+BEGIN
+
+	update MATCH
+	set IDAWAYTEAM = i.IDAWAYTEAM,
+    IDTOURNAMENTPHASE = i.IDTOURNAMENTPHASE,
+    IDSTADIUM = i.IDSTADIUM,
+    IDHOMETEAM = i.IDHOMETEAM,
+    IDREFEREE = i.IDREFEREE,
+    STARTDATETIME = i.STARTDATETIME,
+    ADDEDTIME1STHALF = i.ADDEDTIME1STHALF,
+    ADDEDTIME2NDHALF = i.ADDEDTIME2NDHALF,
+    EXTRATIMEADDEDTIME1STHALF = i.EXTRATIMEADDEDTIME1STHALF,
+    EXTRATIMEADDEDTIME2NDHALF = i.EXTRATIMEADDEDTIME2NDHALF,
+    EXTRATIME = i.EXTRATIME,
+    PENALTIES = i.PENALTIES
+
+	from inserted i inner join REFEREE r on i.IDREFEREE = r.IDPERSON
+	where IDMATCH = i.IDMATCH and r.IDCOUNTRY != m.IDAWAYTEAM and r.IDCOUNTRY != m.IDHOMETEAM
+
+	if @@ROWCOUNT < (select count(*) from inserted)
+        print('There were records not being updated because the referee belongs to one of the countries playing on the match.')
+
+end;
+go
+
+
+use mundial
+go
+
+CREATE OR ALTER FUNCTION on_field_check(@IDSummoned numeric)
 RETURNS bit
 BEGIN
 
