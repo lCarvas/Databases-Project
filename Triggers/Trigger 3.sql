@@ -14,7 +14,7 @@ BEGIN
             insert into EVENTS (IDSUMMONEDMAINPLAYER,IDSUMMONEDPLAYEROUT,MINUTE,MATCHPART,EVENTTYPE,CARDTYPE)
             SELECT distinct i.IDSUMMONEDMAINPLAYER, i.IDSUMMONEDPLAYEROUT, i.MINUTE, i.MATCHPART, 'Card', 'Red'
             from inserted i join events e on i.IDSUMMONEDMAINPLAYER = e.IDSUMMONEDMAINPLAYER
-            WHERE 2 = (select COUNT(e.CARDTYPE)
+            WHERE 1 < (select COUNT(e.CARDTYPE)
                             from EVENTS e 
                             where e.CARDTYPE = 'Yellow' and i.IDSUMMONEDMAINPLAYER = e.IDSUMMONEDMAINPLAYER
                             group by e.IDSUMMONEDMAINPLAYER)
